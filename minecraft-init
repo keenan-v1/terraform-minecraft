@@ -1,0 +1,117 @@
+ #!/bin/bash
+ # /etc/init.d/minecraft
+ # version 0.4.2 2016-02-09 (YYYY-MM-DD)
+ #
+ ### BEGIN INIT INFO
+ # Provides:   minecraft
+ # Required-Start: $local_fs $remote_fs screen-cleanup
+ # Required-Stop:  $local_fs $remote_fs
+ # Should-Start:   $network
+ # Should-Stop:    $network
+ # Default-Start:  2 3 4 5
+ # Default-Stop:   0 1 6
+ # Short-Description:    Minecraft server
+ # Description:    Starts the minecraft server
+ ### END INIT INFO
+ 
+ #Settings
+ SERVICE='FTBserver-1.12.2-14.23.1.2566-universal.jar'
+ SCREENNAME='minecraft'
+ USERNAME='ec2-user'
+ MCPATH='/home/ec2-user/minecraft/direwolf20-1.12'
+ INVOCATION="sh /home/ec2-user/minecraft/direwolf20-1.12/ServerStart.sh" 
+ 
+ ME=`whoami`
+ as_user() {
+   if [ "$ME" = "$USERNAME" ] ; then
+     bash -c "$1"
+   else
+     su - "$USERNAME" -c "$1"
+   fi
+ }
+ 
+ mc_start() {
+   if  pgrep -u $USERNAME -f $SERVICE > /dev/null ; then
+     echo "$SERVICE is already running!"
+   else
+     echo "Starting $SERVICE..."
+     cd $MCPATH
+     as_user "cd $MCPATH && screen -dmS ${SCREENNAME} $INVOCATION"
+     sleep 7
+     if pgrep -u $USERNAME -f $SERVICE > /dev/null ; then
+       echo "$SERVICE is now running."
+	   touch /var/lock/subsys/minecraft
+     else
+       echo "Error! Could not start $SERVICE!"
+     fi
+   fi
+ }
+
+ mc_stop() {
+   if pgrep -u $USERNAME -f $SERVICE > /dev/null ; then
+     echo "Stopping $SERVICE"
+     as_user "screen -p 0 -S ${SCREENNAME} -X eval 'stuff \"say SERVER SHUTTING DOWN IN 10 SECONDS. Saving map...\"\015'"
+     as_user "screen -p 0 -S ${SCREENNAME} -X eval 'stuff \"save-all\"\015'"
+     sleep 10
+     as_user "screen -p 0 -S ${SCREENNAME} -X eval 'stuff \"stop\"\015'"
+     sleep 7
+   else
+     echo "$SERVICE was not running."
+   fi
+   if pgrep -u $USERNAME -f $SERVICE > /dev/null ; then
+     echo "Error! $SERVICE could not be stopped."
+   else
+     echo "$SERVICE is stopped."
+   fi
+   as_user "aws s3 sync /home/ec2-user/minecraft s3://minecraft.death.rocks"
+   rm -f /var/lock/subsys/minecraft
+   echo "Backed up to S3"
+ }
+
+ mc_command() {
+   command="$1";
+   if pgrep -u $USERNAME -f $SERVICE > /dev/null ; then
+     pre_log_len=`wc -l "$MCPATH/logs/latest.log" | awk '{print $1}'`
+     echo "$SERVICE is running... executing command"
+     as_user "screen -p 0 -S ${SCREENNAME} -X eval 'stuff \"$command\"\015'"
+     sleep .1 # assumes that the command will run and print to the log file in less than .1 seconds
+     # print output
+     tail -n $((`wc -l "$MCPATH/logs/latest.log" | awk '{print $1}'`-$pre_log_len)) "$MCPATH/logs/latest.log"
+   fi
+ }
+ 
+ #Start-Stop here
+ case "$1" in
+   start)
+     mc_start
+     ;;
+   stop)
+     mc_stop
+     ;;
+   restart)
+     mc_stop
+     mc_start
+     ;;
+   status)
+     if pgrep -u $USERNAME -f $SERVICE > /dev/null ; then
+       echo "$SERVICE is running."
+     else
+       echo "$SERVICE is not running."
+     fi
+     ;;
+   command)
+     if [ $# -gt 1 ] ; then
+       shift
+       mc_command "$*"
+     else
+       echo "Must specify server command (try 'help'?)"
+     fi
+     ;;
+ 
+   *)
+   echo "Usage: $0 {start|stop|status|restart|command \"server command\"}"
+   exit 1
+   ;;
+ esac
+ 
+ exit 0
