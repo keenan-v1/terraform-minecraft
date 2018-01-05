@@ -6,7 +6,7 @@ provider "aws" {
 
 resource "aws_key_pair" "key" {
    key_name = "minecraft-key-pair-useast1"
-   public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCDLvXV/s6OcHMU5/j42rpbnYZnthXrD7VaAXd0kVRonqL8DLkBIz+FNzPHCeTMTCot6oo9V/z6VQ/xwAGt+0zfPLrv8u7d2K/XV86Pfq2Gv/ltQiqAGJo8IyDW3mRUpu3l2NcAV3awEAK/+MKF4blXYGJDXgiGxeyvuwhfd8VRnA+FHo7PzA2HI/Pj5C2RKiS/RPqMt0QUIT1qiHUf//xbDxvYeMfLGyj7aVoPAh5u/AEc700IFD+kgFQO2V6syeC3hepTvMoR/nbyAnbIv8iioEsS1wFAapqS/XVVm7VZcT+AmwMmZojlUoTpBIGh1N3Q+2e+3ArHqmiPcEZkk+SZ"
+   public_key = "${file("${var.public_key_file}")}"
 }
 
 resource "aws_spot_instance_request" "minecraft" {
@@ -32,7 +32,7 @@ resource "aws_spot_instance_request" "minecraft" {
 	connection {
 		user = "ec2-user"
 		host = "${aws_spot_instance_request.minecraft.public_ip}"
-		private_key = "${file("~/.ssh/administrator-key-pair-useast1.pem")}"
+		private_key = "${file("${var.private_key_file}")}"
 	}
 
 	provisioner "file" {
