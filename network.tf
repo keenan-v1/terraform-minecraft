@@ -44,7 +44,7 @@ resource "aws_internet_gateway" "gw" {
 }
 
 resource "aws_subnet" "minecraft" {
-	availability_zone="us-east-1a"
+	availability_zone="${var.availability_zone}"
 	cidr_block = "10.0.0.0/24"
 	vpc_id = "${aws_vpc.minecraft.id}"
 	map_public_ip_on_launch = true

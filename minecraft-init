@@ -15,7 +15,7 @@
  ### END INIT INFO
  
  #Settings
- SERVICE='FTBserver-1.12.2-14.23.1.2566-universal.jar'
+ SERVICE='FTBserver-1.12.2-14.23.1.2585-universal.jar'
  SCREENNAME='minecraft'
  USERNAME='ec2-user'
  MCPATH='/home/ec2-user/minecraft/direwolf20-1.12'

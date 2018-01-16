@@ -10,7 +10,7 @@ resource "aws_key_pair" "key" {
 }
 
 resource "aws_spot_instance_request" "minecraft" {
-	availability_zone = "us-east-1a"
+	availability_zone = "${var.availability_zone}"
 	ami = "ami-5583d42f"
 	instance_type = "m5.xlarge"
 	
@@ -19,7 +19,7 @@ resource "aws_spot_instance_request" "minecraft" {
 	spot_type = "one-time"
 	
 	root_block_device {
-		volume_size = "15"
+		volume_size = "25"
 		delete_on_termination=true
 	}
 	subnet_id = "${aws_subnet.minecraft.id}"

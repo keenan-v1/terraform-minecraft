@@ -3,6 +3,9 @@ variable "secret_key" {}
 variable "region" {
 	default = "us-east-1"
 }
+variable "availability_zone" {
+	default = "us-east-1c"
+}
 variable "amis" {
 	type = "map"
 	default = {
